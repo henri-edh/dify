@@ -19,7 +19,7 @@ jobs:
 
       - name: Add Upstream and Sync
         run: |
-          git remote add upstream https://github.com/FlowiseAI/Flowise.git || true
+          git remote add upstream https://github.com/langgenius/dify.git || true
           git fetch upstream
           git checkout main  # Adjust if your branch is not 'main'
           git merge upstream/main --no-edit || true
