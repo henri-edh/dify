@@ -1,11 +1,12 @@
 from sqlalchemy import func
+from sqlalchemy.orm import Mapped, mapped_column
 
 from .engine import db
 from .model import Message
 from .types import StringUUID
 
 
-class SavedMessage(db.Model):
+class SavedMessage(db.Model):  # type: ignore[name-defined]
     __tablename__ = "saved_messages"
     __table_args__ = (
         db.PrimaryKeyConstraint("id", name="saved_message_pkey"),
@@ -24,7 +25,7 @@ class SavedMessage(db.Model):
         return db.session.query(Message).filter(Message.id == self.message_id).first()
 
 
-class PinnedConversation(db.Model):
+class PinnedConversation(db.Model):  # type: ignore[name-defined]
     __tablename__ = "pinned_conversations"
     __table_args__ = (
         db.PrimaryKeyConstraint("id", name="pinned_conversation_pkey"),
@@ -33,7 +34,7 @@ class PinnedConversation(db.Model):
 
     id = db.Column(StringUUID, server_default=db.text("uuid_generate_v4()"))
     app_id = db.Column(StringUUID, nullable=False)
-    conversation_id = db.Column(StringUUID, nullable=False)
+    conversation_id: Mapped[str] = mapped_column(StringUUID)
     created_by_role = db.Column(db.String(255), nullable=False, server_default=db.text("'end_user'::character varying"))
     created_by = db.Column(StringUUID, nullable=False)
     created_at = db.Column(db.DateTime, nullable=False, server_default=func.current_timestamp())
