@@ -7,7 +7,7 @@ from collections.abc import Generator, Mapping
 from typing import Any, Optional, Union, cast
 
 from flask import Flask, current_app
-from sqlalchemy import Integer, and_, or_, text
+from sqlalchemy import Float, and_, or_, text
 from sqlalchemy import cast as sqlalchemy_cast
 
 from core.app.app_config.entities import (
@@ -52,7 +52,6 @@ from core.rag.retrieval.template_prompts import (
     METADATA_FILTER_USER_PROMPT_2,
     METADATA_FILTER_USER_PROMPT_3,
 )
-from core.tools.entities.common_entities import I18nObject
 from core.tools.utils.dataset_retriever.dataset_retriever_base_tool import DatasetRetrieverBaseTool
 from extensions.ext_database import db
 from libs.json_in_md_parser import parse_and_check_json_markdown
@@ -207,6 +206,7 @@ class DatasetRetrieval:
             source = {
                 "dataset_id": item.metadata.get("dataset_id"),
                 "dataset_name": item.metadata.get("dataset_name"),
+                "document_id": item.metadata.get("document_id") or item.metadata.get("title"),
                 "document_name": item.metadata.get("title"),
                 "data_source_type": "external",
                 "retriever_from": invoke_from.to_source(),
@@ -295,10 +295,7 @@ class DatasetRetrieval:
         for dataset in available_datasets:
             description = dataset.description
             if not description:
-                description = I18nObject(
-                    en_US="useful for when you want to answer queries about the " + dataset.name,
-                    zh_Hans="用于回答关于 " + dataset.name + " 的查询",
-                )
+                description = "useful for when you want to answer queries about the " + dataset.name
 
             description = description.replace("\n", "").replace("\r", "")
             message_tool = PromptMessageTool(
@@ -872,7 +869,9 @@ class DatasetRetrieval:
                         )
                     )
                 metadata_condition = MetadataCondition(
-                    logical_operator=metadata_filtering_conditions.logical_operator,  # type: ignore
+                    logical_operator=metadata_filtering_conditions.logical_operator
+                    if metadata_filtering_conditions
+                    else "or",  # type: ignore
                     conditions=conditions,
                 )
         elif metadata_filtering_mode == "manual":
@@ -894,10 +893,10 @@ class DatasetRetrieval:
         else:
             raise ValueError("Invalid metadata filtering mode")
         if filters:
-            if metadata_filtering_conditions.logical_operator == "or":  # type: ignore
-                document_query = document_query.filter(or_(*filters))
-            else:
+            if metadata_filtering_conditions and metadata_filtering_conditions.logical_operator == "and":  # type: ignore
                 document_query = document_query.filter(and_(*filters))
+            else:
+                document_query = document_query.filter(or_(*filters))
         documents = document_query.all()
         # group by dataset_id
         metadata_filter_document_ids = defaultdict(list) if documents else None  # type: ignore
@@ -1006,28 +1005,24 @@ class DatasetRetrieval:
                 if isinstance(value, str):
                     filters.append(DatasetDocument.doc_metadata[metadata_name] == f'"{value}"')
                 else:
-                    filters.append(
-                        sqlalchemy_cast(DatasetDocument.doc_metadata[metadata_name].astext, Integer) == value
-                    )
+                    filters.append(sqlalchemy_cast(DatasetDocument.doc_metadata[metadata_name].astext, Float) == value)
             case "is not" | "≠":
                 if isinstance(value, str):
                     filters.append(DatasetDocument.doc_metadata[metadata_name] != f'"{value}"')
                 else:
-                    filters.append(
-                        sqlalchemy_cast(DatasetDocument.doc_metadata[metadata_name].astext, Integer) != value
-                    )
+                    filters.append(sqlalchemy_cast(DatasetDocument.doc_metadata[metadata_name].astext, Float) != value)
             case "empty":
                 filters.append(DatasetDocument.doc_metadata[metadata_name].is_(None))
             case "not empty":
                 filters.append(DatasetDocument.doc_metadata[metadata_name].isnot(None))
             case "before" | "<":
-                filters.append(sqlalchemy_cast(DatasetDocument.doc_metadata[metadata_name].astext, Integer) < value)
+                filters.append(sqlalchemy_cast(DatasetDocument.doc_metadata[metadata_name].astext, Float) < value)
             case "after" | ">":
-                filters.append(sqlalchemy_cast(DatasetDocument.doc_metadata[metadata_name].astext, Integer) > value)
+                filters.append(sqlalchemy_cast(DatasetDocument.doc_metadata[metadata_name].astext, Float) > value)
             case "≤" | "<=":
-                filters.append(sqlalchemy_cast(DatasetDocument.doc_metadata[metadata_name].astext, Integer) <= value)
+                filters.append(sqlalchemy_cast(DatasetDocument.doc_metadata[metadata_name].astext, Float) <= value)
             case "≥" | ">=":
-                filters.append(sqlalchemy_cast(DatasetDocument.doc_metadata[metadata_name].astext, Integer) >= value)
+                filters.append(sqlalchemy_cast(DatasetDocument.doc_metadata[metadata_name].astext, Float) >= value)
             case _:
                 pass
         return filters

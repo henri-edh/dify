@@ -17,6 +17,7 @@ import {
 } from '@/app/components/header/account-setting/model-provider-page/declarations'
 import type { Model, ModelProvider } from '@/app/components/header/account-setting/model-provider-page/declarations'
 import type { RETRIEVE_METHOD } from '@/types/app'
+import type { BasicPlan } from '@/app/components/billing/type'
 import { Plan, type UsagePlanInfo } from '@/app/components/billing/type'
 import { fetchCurrentPlanInfo } from '@/service/billing'
 import { parseCurrentPlan } from '@/app/components/billing/utils'
@@ -25,6 +26,7 @@ import Toast from '@/app/components/base/toast'
 import {
   useEducationStatus,
 } from '@/service/use-education'
+import { noop } from 'lodash-es'
 
 type ProviderContextState = {
   modelProviders: ModelProvider[]
@@ -33,7 +35,7 @@ type ProviderContextState = {
   supportRetrievalMethods: RETRIEVE_METHOD[]
   isAPIKeySet: boolean
   plan: {
-    type: Plan
+    type: BasicPlan
     usage: UsagePlanInfo
     total: UsagePlanInfo
   }
@@ -49,7 +51,7 @@ type ProviderContextState = {
 }
 const ProviderContext = createContext<ProviderContextState>({
   modelProviders: [],
-  refreshModelProviders: () => { },
+  refreshModelProviders: noop,
   textGenerationModelList: [],
   supportRetrievalMethods: [],
   isAPIKeySet: true,
@@ -72,7 +74,7 @@ const ProviderContext = createContext<ProviderContextState>({
   },
   isFetchedPlan: false,
   enableBilling: false,
-  onPlanInfoChanged: () => { },
+  onPlanInfoChanged: noop,
   enableReplaceWebAppLogo: false,
   modelLoadBalancingEnabled: false,
   datasetOperatorEnabled: false,

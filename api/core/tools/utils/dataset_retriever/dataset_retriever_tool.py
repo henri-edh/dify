@@ -4,9 +4,9 @@ from pydantic import BaseModel, Field
 
 from core.rag.datasource.retrieval_service import RetrievalService
 from core.rag.entities.context_entities import DocumentContext
+from core.rag.entities.metadata_entities import MetadataCondition
 from core.rag.models.document import Document as RetrievalDocument
 from core.rag.retrieval.retrieval_methods import RetrievalMethod
-from core.tools.entities.common_entities import I18nObject
 from core.tools.utils.dataset_retriever.dataset_retriever_base_tool import DatasetRetrieverBaseTool
 from extensions.ext_database import db
 from models.dataset import Dataset
@@ -34,15 +34,13 @@ class DatasetRetrieverTool(DatasetRetrieverBaseTool):
     args_schema: type[BaseModel] = DatasetRetrieverToolInput
     description: str = "use this to retrieve a dataset. "
     dataset_id: str
+    metadata_filtering_conditions: MetadataCondition
 
     @classmethod
     def from_dataset(cls, dataset: Dataset, **kwargs):
         description = dataset.description
         if not description:
-            description = I18nObject(
-                en_US="useful for when you want to answer queries about the " + dataset.name,
-                zh_Hans="用于回答关于 " + dataset.name + " 的查询",
-            )
+            description = "useful for when you want to answer queries about the " + dataset.name
 
         description = description.replace("\n", "").replace("\r", "")
         return cls(
@@ -50,6 +48,7 @@ class DatasetRetrieverTool(DatasetRetrieverBaseTool):
             tenant_id=dataset.tenant_id,
             dataset_id=dataset.id,
             description=description,
+            metadata_filtering_conditions=MetadataCondition(),
             **kwargs,
         )
 
@@ -69,6 +68,7 @@ class DatasetRetrieverTool(DatasetRetrieverBaseTool):
                 dataset_id=dataset.id,
                 query=query,
                 external_retrieval_parameters=dataset.retrieval_model,
+                metadata_condition=self.metadata_filtering_conditions,
             )
             for external_document in external_documents:
                 document = RetrievalDocument(
@@ -90,6 +90,7 @@ class DatasetRetrieverTool(DatasetRetrieverBaseTool):
                         "position": position,
                         "dataset_id": item.metadata.get("dataset_id"),
                         "dataset_name": item.metadata.get("dataset_name"),
+                        "document_id": item.metadata.get("document_id") or item.metadata.get("title"),
                         "document_name": item.metadata.get("title"),
                         "data_source_type": "external",
                         "retriever_from": self.retriever_from,
@@ -97,7 +98,7 @@ class DatasetRetrieverTool(DatasetRetrieverBaseTool):
                         "title": item.metadata.get("title"),
                         "content": item.page_content,
                     }
-                context_list.append(source)
+                    context_list.append(source)
             for hit_callback in self.hit_callbacks:
                 hit_callback.return_retriever_resource_info(context_list)
 
