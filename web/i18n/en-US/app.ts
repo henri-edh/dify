@@ -150,6 +150,14 @@ const translation = {
       notConfigured: 'Config provider to enable tracing',
       moreProvider: 'More Provider',
     },
+    arize: {
+      title: 'Arize',
+      description: 'Enterprise-grade LLM observability, online & offline evaluation, monitoring, and experimentation—powered by OpenTelemetry. Purpose-built for LLM & agent-driven applications.',
+    },
+    phoenix: {
+      title: 'Phoenix',
+      description: 'Open-source & OpenTelemetry-based observability, evaluation, prompt engineering and experimentation platform for your LLM workflows and agents.',
+    },
     langsmith: {
       title: 'LangSmith',
       description: 'An all-in-one developer platform for every step of the LLM-powered application lifecycle.',
@@ -165,6 +173,10 @@ const translation = {
     weave: {
       title: 'Weave',
       description: 'Weave is an open-source platform for evaluating, testing, and monitoring LLM applications.',
+    },
+    aliyun: {
+      title: 'Cloud Monitor',
+      description: 'The fully-managed and maintenance-free observability platform provided by Alibaba Cloud, enables out-of-the-box monitoring, tracing, and evaluation of Dify applications.',
     },
     inUse: 'In use',
     configProvider: {
