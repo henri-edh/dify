@@ -1,4 +1,3 @@
-/* eslint-disable no-eval */
 const fs = require('node:fs')
 const path = require('node:path')
 const transpile = require('typescript').transpile
@@ -9,7 +8,7 @@ const languages = data.languages.filter(language => language.supported).map(lang
 
 async function getKeysFromLanuage(language) {
   return new Promise((resolve, reject) => {
-    const folderPath = path.join(__dirname, language)
+    const folderPath = path.join(__dirname, '../i18n', language)
     let allKeys = []
     fs.readdir(folderPath, (err, files) => {
       if (err) {
